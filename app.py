@@ -1,4 +1,3 @@
-
 import base64
 import pandas as pd 
 import numpy as np 
@@ -20,36 +19,30 @@ import matplotlib.pyplot as plt
 
 
 df_final= pd.read_csv("df_final.csv")
-df = df_final.copy()                                            # Copie pour la partie streamlit (utilisateurs)
+df = df_final.copy()
 
 df_final['Genre'] = df_final['Genre'].fillna('')
 df_final['Acteurs'] = df_final['Acteurs'].fillna('')
 df_final['Resume'] = df_final['Resume'].fillna('')
 
 
-# CREATION DES LISTES DU DF_FINAL (avant modifications)
-
-list_acteurs = []                                               # Création d'une liste d'acteur
-for list_noms in df_final['Acteurs'] :                          # Première boucle pour décomposer la liste d'acteurs        
+list_acteurs = []
+for list_noms in df_final['Acteurs']:
     list_decompo = list_noms.split(', ')
-    for nom_entier in list_decompo :                            # Deuxième boucle pour séparer le prénom(s) et Nom de chaque acteur
-        if nom_entier != 'Unknown' :                            # Condition pour enlever les inconnus
+    for nom_entier in list_decompo:
+        if nom_entier != 'Unknown':
             list_acteurs.append(nom_entier)
 
-list_acteurs = list(set(list_acteurs))                          # Enlève les doublons et conserve le type (liste)
-list_acteurs.sort()                                             # Liste par ordre alphabétique
+list_acteurs = list(set(list_acteurs))
+list_acteurs.sort()
 
 list_genre = ['Action', 'Adventure', 'Documentary', 'Drama', 'Fantasy', 'Animation', 'Comedy', 'Family', 'History']
 
 
-# TRAITEMENT DES DATA DU DF_FINAL + CONSTRUCTION DU MODEL
-
-df_final['Acteurs'] = df_final['Acteurs'].str.replace(' ', '_', regex=False).str.replace(',', ' ')     # Suppression des espaces entre les prénoms et noms pour la Tokenisation
+df_final['Acteurs'] = df_final['Acteurs'].str.replace(' ', '_', regex=False).str.replace(',', ' ')
 df_final['Acteurs']  = df_final['Acteurs'].str.lower()
 
-
-
-df_final['Realisateur'] = df_final['Realisateur'].str.replace(' ', '_')                                # Suppression des espaces pour la Tokenisation comme pour les acteurs
+df_final['Realisateur'] = df_final['Realisateur'].str.replace(' ', '_')
 df_final['Realisateur']  = df_final['Realisateur'].str.lower()
 
 df_final['Genre']  = df_final['Genre'].str.lower()
@@ -67,52 +60,46 @@ preprocess = ColumnTransformer(transformers=[
 ])
 
 my_pipeline = Pipeline(steps=[
-    ('preprocess', preprocess),                                          # Étape 1 : encodage et normalisation de l'ensemble des colonnes
-    ('model', NearestNeighbors(n_neighbors=7, metric='cosine'))          # Étape 2 : On donne les données propres au modèle
+    ('preprocess', preprocess),
+    ('model', NearestNeighbors(n_neighbors=7, metric='cosine'))
 ])
 
 my_pipeline.fit(df_final)
 
 def reco_preferences(acteur=None, genre=None, realisateur=None):
 
-    # transformation des noms de l'acteur et du réalisateur
-    if acteur is not None :
+    if acteur is not None:
         acteur = acteur.replace(" ", "_").lower()
         acteur = (acteur + " ") * 5
     
     if genre is not None: 
         genre = (genre + " ") * 5
 
-    if realisateur is not None :
+    if realisateur is not None:
         realisateur = realisateur.replace(" ", "_").lower()
         realisateur = (realisateur + " ") * 5
 
-    # création du film virtuel
     film = pd.DataFrame({
         'Genre': [genre],
         'Realisateur': [realisateur],
         'Acteurs': [acteur],
         'Resume': [""]})
 
-    # transformation en vecteur
     vecteur = my_pipeline.named_steps['preprocess'].transform(film)
 
-    # recherche des voisins
     distances, indices = my_pipeline.named_steps['model'].kneighbors(vecteur)
 
     return df.iloc[indices[0]][["Titre", "Annee", "Genre","Acteurs","Realisateur","Affiche","Image", "Note", "Resume",  "Duree"]].sort_values(by='Note', ascending=False)
 
 def reco_titre(titre: str):
 
-    index = df_final[df_final['Titre'].str.lower() == titre.lower()].index[0]                        # Trouve l’index du film
+    index = df_final[df_final['Titre'].str.lower() == titre.lower()].index[0]
 
-    vecteur = my_pipeline.named_steps['preprocess'].transform(df_final.iloc[[index]])                   # Transform l'index en vecteur pour le modèle
+    vecteur = my_pipeline.named_steps['preprocess'].transform(df_final.iloc[[index]])
     
-    distances, indices = my_pipeline.named_steps['model'].kneighbors(vecteur)                           # Récupère les distances et indices des plus proches voisins
+    distances, indices = my_pipeline.named_steps['model'].kneighbors(vecteur)
 
-    return df.iloc[indices[0]][["Titre", "Annee", "Genre", "Realisateur", "Acteurs","Affiche","Image", "Note", "Resume", "Duree"]].sort_values(by='Note', ascending=False)      # Retourne les film les plus proches 
-
-
+    return df.iloc[indices[0]][["Titre", "Annee", "Genre", "Realisateur", "Acteurs","Affiche","Image", "Note", "Resume", "Duree"]].sort_values(by='Note', ascending=False)
 
 
 def set_background(image_path):                                             
@@ -138,22 +125,45 @@ set_background("image/download (2).jpg")
 with st.sidebar:
     selected = option_menu(
         None,
-        ["FILMS","PREFERENCES" ,"TOP 5", "KPI"],
-        icons=['house','heart', 'fire', 'graph-up'],
+        ["FILMS", "PREFERENCES", "TOP 5", "KPI", "JE SAIS PAS"],
+        icons=['house', 'heart', 'fire', 'graph-up', 'graph-up'],
         menu_icon="cast",
         default_index=0,
-        orientation="horizontal")
+        orientation="horizontal"
+    )
+
+    if selected == "KPI":
+        st.markdown("---")
+        kpi_choice = st.selectbox(
+            "Choisir un KPI",
+            options=[
+                "Nombre total de films",
+                "Top 10 films - Recettes mondiales",
+                "Top 10 films - Budget",
+                "Films les mieux notes (IMDb)",
+                "Films les plus populaires (TMDB)",
+                "Repartition des films par annee de sortie",
+            ]
+        )
+
+        st.markdown("---")
+        source_choice = st.selectbox(
+            "Choisir la source",
+            options=[
+                "Toutes les sources",
+                "IMDb",
+                "TMDB",
+            ]
+        )
 
 
 
 if selected == "FILMS":
         st.title("Recommandations par film ˙✧🍿") 
     
-        
         titre = st.selectbox(
         "Choisissez un titre :",
         [""] + sorted(df["Titre"].dropna().unique()))
-
 
         if titre != "":
             reco = reco_titre(titre)
@@ -161,7 +171,7 @@ if selected == "FILMS":
             
             for ind, row in reco.iterrows():
                 
-                with st.container():                                                            # Aligne les colonnes entre elles
+                with st.container():
                     col_image, col_description, col_resume = st.columns([1,2,3])
 
                     with col_image:
@@ -175,24 +185,23 @@ if selected == "FILMS":
                         st.write(f"Realisateur : {row['Realisateur']}")
                         st.write()
                     
-                    if row['Note'] >= 7.5 :
+                    if row['Note'] >= 7.5:
                         star = '⭐⭐⭐'
-                    elif row['Note'] >= 5 :
+                    elif row['Note'] >= 5:
                         star = '⭐⭐'
-                    else : 
+                    else: 
                         star = '⭐'
 
-                    with col_resume :
+                    with col_resume:
                         st.markdown(f" {star} {row['Note']} /10  |  ⏱ {row['Duree']} min")
                         with st.expander("Voir le résumé"):
                             translator = GoogleTranslator(source='en', target='fr')                     
-                            st.write(translator.translate(row['Resume']))                      # Traduction ddu résumé en Français
+                            st.write(translator.translate(row['Resume']))
 
 
 
 elif selected == "PREFERENCES":
         st.title("Recommandations par préférences ˙✧🍿")
-        
 
         realisateur = st.selectbox(
         "Choisissez un réalisateur :",
@@ -206,15 +215,14 @@ elif selected == "PREFERENCES":
         "Choisissez un acteur :",
         [""] + sorted(list_acteurs))
 
-
-        if realisateur != ""  or genre != "" or acteur != "" :
+        if realisateur != "" or genre != "" or acteur != "":
             reco_pref = reco_preferences(acteur, genre, realisateur)
 
             st.subheader("Films recommandés")
                     
             for ind, row in reco_pref.iterrows():
 
-                with st.container():                                                            # Aligne les colonnes entre elles
+                with st.container():
                     col_image, col_description, col_resume = st.columns([1,2,3])
 
                     with col_image:
@@ -222,7 +230,7 @@ elif selected == "PREFERENCES":
                         if row["Affiche"] != "" and row["Affiche"] != "Unknown":
                             st.image(BASE_URL + row["Affiche"], use_container_width=True)
                         else:
-                            st.image("https://via.placeholder.com/200x300?text=No+Image", use_container_width=True)         # +Image -> variable ?
+                            st.image("https://via.placeholder.com/200x300?text=No+Image", use_container_width=True)
 
                     with col_description:
                         st.write(f"Titre : {row['Titre']}")
@@ -231,18 +239,18 @@ elif selected == "PREFERENCES":
                         st.write(f"Realisateur : {row['Realisateur']}")
                         st.write()
 
-                    if row['Note'] >= 7.5 :
+                    if row['Note'] >= 7.5:
                         star = '⭐⭐⭐'
-                    elif row['Note'] >= 5 :
+                    elif row['Note'] >= 5:
                         star = '⭐⭐'
-                    else : 
+                    else: 
                         star = '⭐'
 
-                    with col_resume :
+                    with col_resume:
                         st.markdown(f" {star} {row['Note']} /10 | ⏱ {row['Duree']} min")
                         with st.expander("Voir le résumé"):
                             translator = GoogleTranslator(source='en', target='fr')                     
-                            st.write(translator.translate(row['Resume']))                      # Traduction ddu résumé en Français
+                            st.write(translator.translate(row['Resume']))
 
 
 
@@ -269,51 +277,48 @@ elif selected == "TOP 5":
                 st.caption(f" ᯓ★ {film['Note']} | {int(film['Nb_votes'])} vote | ⏱ {int(film['Duree'])} min")
     st.markdown("---")
 
-    # Comédies
     top_comedies = (
         df[df["Genre"].str.contains("Comedy", na=False) & (df["Nb_votes"] > 1000)]
         .sort_values("Note", ascending=False)
         .head(10)
     )
     afficher_top_netflix(top_comedies, "Top 5 Comédies")
-    # Animations
+
     top_animation = (
         df[df["Genre"].str.contains("Animation", na=False) & (df["Nb_votes"] > 1000)]
         .sort_values("Note", ascending=False)
         .head(10)
     )
     afficher_top_netflix(top_animation, "Top 5 Animations")
-    #DRAMA
+
     top_Drama = (
         df[df["Genre"].str.contains("Drama", na=False) & (df["Nb_votes"] > 1000)]
         .sort_values("Note", ascending=False)
         .head(10)
     )
     afficher_top_netflix(top_Drama, "Top 5 Drama")
-    #AVENTURE 
+
     top_Adventure = (
         df[df["Genre"].str.contains("Adventure", na=False) & (df["Nb_votes"] > 1000)]
         .sort_values("Note", ascending=False)
         .head(10)
     )
     afficher_top_netflix(top_Adventure, "Top 5 Aventure")
-    #Action
+
     top_Action = (
         df[df["Genre"].str.contains("Action", na=False) & (df["Nb_votes"] > 1000)]
         .sort_values("Note", ascending=False)
         .head(10)
     )
     afficher_top_netflix(top_Action, "Top 5 Action")
-    #FAMILLE
+
     top_famille = (
         df[df["Genre"].str.contains("Family", na=False) & (df["Nb_votes"] > 1000)]
         .sort_values("Note", ascending=False)
         .head(10)
     )
     afficher_top_netflix(top_famille, "Top 5 Famille")
-   
 
-    # Documentaires Historiques 
     top_doc_histoire = (
         df[(df["Genre"].str.contains("Documentary,History", na=False)) & (df["Nb_votes"] > 1000)]
         .sort_values("Note", ascending=False)
@@ -321,7 +326,6 @@ elif selected == "TOP 5":
     )
     afficher_top_netflix(top_doc_histoire, "Top 5 Documentaires Historiques")
 
-    # Documentaires Musicaux
     top_doc_music = (
         df[(df["Genre"].str.contains("Documentary,Music", na=False)) & (df["Nb_votes"] > 1000)]
         .sort_values("Note", ascending=False)
@@ -329,7 +333,6 @@ elif selected == "TOP 5":
     )
     afficher_top_netflix(top_doc_music, "Top 5 Documentaires Musicaux")
 
-    # Documentaires Sportifs
     top_doc_sport = (
         df[(df["Genre"].str.contains("Documentary,Sport", na=False)) & (df["Nb_votes"] > 1000)]
         .sort_values("Note", ascending=False)
@@ -338,68 +341,61 @@ elif selected == "TOP 5":
     afficher_top_netflix(top_doc_sport, "Top 5 Documentaires Sportifs")
    
 elif selected == "KPI":
-        
-        # Graph des recettes
+    st.title("KPI")
 
-        st.subheader("Top 10 des recettes")
+    if kpi_choice == "Nombre total de films":
+        st.metric(label="Nombre total de films", value=len(df))
 
-        top10_Recette = (df.sort_values("Recette", ascending=False) [["Titre", "Annee", "Recette","Genre"]].head(10))
-        
-        st.title("Recommandations par préférences 📊")
-
+    elif kpi_choice == "Top 10 films - Recettes mondiales":
+        top10_Recette = (df.sort_values("Recette", ascending=False)[["Titre", "Annee", "Recette", "Genre"]].head(10))
         labels = top10_Recette["Titre"] + " (" + top10_Recette["Annee"].astype(str) + ")"
-
-        fig, ax = plt.subplots(figsize=(12,7))
-
-        bars = ax.barh(labels, top10_Recette["Recette"])
+        fig, ax = plt.subplots(figsize=(12, 7))
+        ax.barh(labels, top10_Recette["Recette"])
         ax.invert_yaxis()
-
         ax.set_title("Top 10 films qui ont généré le plus de revenus")
         ax.set_xlabel("Revenus en milliards de dollars")
-
         plt.tight_layout()
-
         st.pyplot(fig)
 
-
-        
-        # Graph Budget
-
-        st.subheader("Top 10 des budgets")
-
-        top10_Budget = (df.sort_values("Budget", ascending=False) [["Titre", "Annee", "Budget","Genre"]].head(10))
-
+    elif kpi_choice == "Top 10 films - Budget":
+        top10_Budget = (df.sort_values("Budget", ascending=False)[["Titre", "Annee", "Budget", "Genre"]].head(10))
         labels = top10_Budget["Titre"] + " (" + top10_Budget["Annee"].astype(str) + ")"
-
-        fig, ax = plt.subplots(figsize=(12,7))
-
-        bars = ax.barh(labels, top10_Budget["Budget"], color="orange")
+        fig, ax = plt.subplots(figsize=(12, 7))
+        ax.barh(labels, top10_Budget["Budget"], color="orange")
         ax.invert_yaxis()
-
         ax.set_title("Top 10 films avec les plus gros budgets")
         ax.set_xlabel("Budget en millions de dollars")
-
         plt.tight_layout()
-
         st.pyplot(fig)
 
-
-        # Graph Note
-
-        st.subheader("⭐ Top 10 des films les mieux notés")
-
-        top10_note = (df[df["Nb_votes"] >= 1000].sort_values("Note", ascending=False)[["Titre", "Annee", "Budget","Genre","Note","Nb_votes"]].head(10))
-
+    elif kpi_choice == "Films les mieux notes (IMDb)":
+        top10_note = (df[df["Nb_votes"] >= 1000].sort_values("Note", ascending=False)[["Titre", "Annee", "Budget", "Genre", "Note", "Nb_votes"]].head(10))
         labels = top10_note["Titre"] + " (" + top10_note["Annee"].astype(str) + ")"
-
-        fig, ax = plt.subplots(figsize=(12,7))
-
-        bars = ax.barh(labels, top10_note["Note"], color="green")
+        fig, ax = plt.subplots(figsize=(12, 7))
+        ax.barh(labels, top10_note["Note"], color="green")
         ax.invert_yaxis()
-
         ax.set_title("Top 10 films les mieux notés (tous genres confondus)")
         ax.set_xlabel("Note TMDB (Nombre de votes > 1000)")
-
         plt.tight_layout()
+        st.pyplot(fig)
 
+    elif kpi_choice == "Films les plus populaires (TMDB)":
+        top_pop = df.sort_values("Popularite", ascending=False).head(10)
+        labels = top_pop["Titre"] + " (" + top_pop["Annee"].astype(str) + ")"
+        fig, ax = plt.subplots(figsize=(12, 7))
+        ax.barh(labels, top_pop["Popularite"], color="cyan")
+        ax.invert_yaxis()
+        ax.set_title("Films les plus populaires - source TMDB")
+        ax.set_xlabel("Indice de popularité TMDB")
+        plt.tight_layout()
+        st.pyplot(fig)
+
+    elif kpi_choice == "Repartition des films par annee de sortie":
+        films_par_an = df.groupby("Annee").size().reset_index(name="Nb_films")
+        fig, ax = plt.subplots(figsize=(12, 7))
+        ax.barh(films_par_an["Annee"], films_par_an["Nb_films"], color="teal")
+        ax.set_title("Répartition des films par années de sortie")
+        ax.set_xlabel("Nb de films")
+        ax.set_ylabel("Années de sortie")
+        plt.tight_layout()
         st.pyplot(fig)
