@@ -146,7 +146,7 @@ with st.sidebar:
 
 
 if selected == "FILMS":
-        st.title("Recommandations par film ˙✧🍿") 
+        st.title("Recommandations par film ˙✧") 
     
         
         titre = st.selectbox(
