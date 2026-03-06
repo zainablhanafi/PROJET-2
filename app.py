@@ -269,31 +269,6 @@ elif selected == "TOP 5":
                 st.caption(f" ᯓ★ {film['Note']} | {int(film['Nb_votes'])} vote | ⏱ {int(film['Duree'])} min")
     st.markdown("---")
 
-
-    # Documentaires Historiques 
-    top_doc_histoire = (
-        df[(df["Genre"].str.contains("Documentary,History", na=False)) & (df["Nb_votes"] > 1000)]
-        .sort_values("Note", ascending=False)
-        .head(10)
-    )
-    afficher_top_netflix(top_doc_histoire, "Top 5 Documentaires Historiques")
-
-    # Documentaires Musicaux
-    top_doc_music = (
-        df[(df["Genre"].str.contains("Documentary,Music", na=False)) & (df["Nb_votes"] > 1000)]
-        .sort_values("Note", ascending=False)
-        .head(10)
-    )
-    afficher_top_netflix(top_doc_music, "Top 5 Documentaires Musicaux")
-
-    # Documentaires Sportifs
-    top_doc_sport = (
-        df[(df["Genre"].str.contains("Documentary,Sport", na=False)) & (df["Nb_votes"] > 1000)]
-        .sort_values("Note", ascending=False)
-        .head(10)
-    )
-    afficher_top_netflix(top_doc_sport, "Top 5 Documentaires Sportifs")
-
     # Comédies
     top_comedies = (
         df[df["Genre"].str.contains("Comedy", na=False) & (df["Nb_votes"] > 1000)]
@@ -301,7 +276,6 @@ elif selected == "TOP 5":
         .head(10)
     )
     afficher_top_netflix(top_comedies, "Top 5 Comédies")
-
     # Animations
     top_animation = (
         df[df["Genre"].str.contains("Animation", na=False) & (df["Nb_votes"] > 1000)]
@@ -337,6 +311,31 @@ elif selected == "TOP 5":
         .head(10)
     )
     afficher_top_netflix(top_famille, "Top 5 Famille")
+   
+
+    # Documentaires Historiques 
+    top_doc_histoire = (
+        df[(df["Genre"].str.contains("Documentary,History", na=False)) & (df["Nb_votes"] > 1000)]
+        .sort_values("Note", ascending=False)
+        .head(10)
+    )
+    afficher_top_netflix(top_doc_histoire, "Top 5 Documentaires Historiques")
+
+    # Documentaires Musicaux
+    top_doc_music = (
+        df[(df["Genre"].str.contains("Documentary,Music", na=False)) & (df["Nb_votes"] > 1000)]
+        .sort_values("Note", ascending=False)
+        .head(10)
+    )
+    afficher_top_netflix(top_doc_music, "Top 5 Documentaires Musicaux")
+
+    # Documentaires Sportifs
+    top_doc_sport = (
+        df[(df["Genre"].str.contains("Documentary,Sport", na=False)) & (df["Nb_votes"] > 1000)]
+        .sort_values("Note", ascending=False)
+        .head(10)
+    )
+    afficher_top_netflix(top_doc_sport, "Top 5 Documentaires Sportifs")
    
 elif selected == "KPI":
         
