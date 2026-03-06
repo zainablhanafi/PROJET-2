@@ -309,7 +309,34 @@ elif selected == "TOP 5":
         .head(10)
     )
     afficher_top_netflix(top_animation, "Top 5 Animations")
-
+    #DRAMA
+    top_Drama = (
+        df[df["Genre"].str.contains("Drama", na=False) & (df["Nb_votes"] > 1000)]
+        .sort_values("Note", ascending=False)
+        .head(10)
+    )
+    afficher_top_netflix(top_animation, "Top 5 Drama")
+    #AVENTURE 
+    top_Adventure = (
+        df[df["Genre"].str.contains("Adventure", na=False) & (df["Nb_votes"] > 1000)]
+        .sort_values("Note", ascending=False)
+        .head(10)
+    )
+    afficher_top_netflix(top_animation, "Top 5 Aventure")
+    #Action
+    top_Action = (
+        df[df["Genre"].str.contains("Action", na=False) & (df["Nb_votes"] > 1000)]
+        .sort_values("Note", ascending=False)
+        .head(10)
+    )
+    afficher_top_netflix(top_animation, "Top 5 Action")
+    #FAMILLE
+    top_famille = (
+        df[df["Genre"].str.contains("Family", na=False) & (df["Nb_votes"] > 1000)]
+        .sort_values("Note", ascending=False)
+        .head(10)
+    )
+    afficher_top_netflix(top_animation, "Top 5 Famille")
    
 elif selected == "KPI":
         
