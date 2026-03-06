@@ -298,4 +298,16 @@ elif selected == "TOP 5":
     afficher_top_netflix(top_doc_sport, "Top 5 Documentaires Sportifs")
 
    
-#elif selected == "KPI":
+elif selected == "KPI":
+        st.title("Indicateurs Clés de Performance")
+    
+        options = {
+        "canva1": "image/canva1.png",
+        "canva2": "image/canva2.png",
+        "canva3": "image/canva3.png",
+        "canva4": "image/canva4.png",
+        "canva5": "image/canva5.png",
+    }
+    
+        choix = st.selectbox("Sélectionnez une image :", list(options.keys()))
+        st.image(options[choix], use_column_width=True)
