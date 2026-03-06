@@ -145,7 +145,7 @@ with st.sidebar:
 
 
 
-if selected == "FILMS":
+if selected == "Films":
         st.title("Recommandations par film ˙✧") 
     
         
@@ -189,7 +189,7 @@ if selected == "FILMS":
 
 
 
-elif selected == "PREFERENCES":
+elif selected == "Préférences":
         st.title("Recommandations par préférences ˙✧")
         
 
@@ -245,7 +245,7 @@ elif selected == "PREFERENCES":
 
 
 
-elif selected == "TOP 5":
+elif selected == "Top 5":
     st.title("Top 5 Films")
     def afficher_top_netflix(dataframe, titre_section):
         st.subheader(titre_section)
