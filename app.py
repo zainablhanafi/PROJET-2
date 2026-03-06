@@ -125,8 +125,8 @@ set_background("image/download (2).jpg")
 with st.sidebar:
     selected = option_menu(
         None,
-        ["FILMS", "PREFERENCES", "TOP 5", "KPI", "JE SAIS PAS"],
-        icons=['house', 'heart', 'fire', 'graph-up', 'graph-up'],
+        ["FILMS", "PREFERENCES", "TOP 5", "KPI"],
+        icons=['house', 'heart', 'fire', 'graph-up'],
         menu_icon="cast",
         default_index=0,
         orientation="horizontal"
