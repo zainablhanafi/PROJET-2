@@ -1,3 +1,4 @@
+
 import base64
 import pandas as pd 
 import numpy as np 
@@ -17,9 +18,18 @@ from sklearn.preprocessing import FunctionTransformer
 from deep_translator import GoogleTranslator
 import matplotlib.pyplot as plt
 
+ 
 
-df_final= pd.read_csv("df_final.csv")
-df = df_final.copy()
+@st.cache_data
+def load_data():
+    df_final= pd.read_csv("df_final.csv")
+    df = df_final.copy()
+
+    return df,df_final 
+    
+df,df_final = load_data()
+
+
 
 df_final['Genre'] = df_final['Genre'].fillna('')
 df_final['Acteurs'] = df_final['Acteurs'].fillna('')
@@ -340,62 +350,3 @@ elif selected == "TOP 5":
     )
     afficher_top_netflix(top_doc_sport, "Top 5 Documentaires Sportifs")
    
-elif selected == "KPI":
-    st.title("KPI")
-
-    if kpi_choice == "Nombre total de films":
-        st.metric(label="Nombre total de films", value=len(df))
-
-    elif kpi_choice == "Top 10 films - Recettes mondiales":
-        top10_Recette = (df.sort_values("Recette", ascending=False)[["Titre", "Annee", "Recette", "Genre"]].head(10))
-        labels = top10_Recette["Titre"] + " (" + top10_Recette["Annee"].astype(str) + ")"
-        fig, ax = plt.subplots(figsize=(12, 7))
-        ax.barh(labels, top10_Recette["Recette"])
-        ax.invert_yaxis()
-        ax.set_title("Top 10 films qui ont généré le plus de revenus")
-        ax.set_xlabel("Revenus en milliards de dollars")
-        plt.tight_layout()
-        st.pyplot(fig)
-
-    elif kpi_choice == "Top 10 films - Budget":
-        top10_Budget = (df.sort_values("Budget", ascending=False)[["Titre", "Annee", "Budget", "Genre"]].head(10))
-        labels = top10_Budget["Titre"] + " (" + top10_Budget["Annee"].astype(str) + ")"
-        fig, ax = plt.subplots(figsize=(12, 7))
-        ax.barh(labels, top10_Budget["Budget"], color="orange")
-        ax.invert_yaxis()
-        ax.set_title("Top 10 films avec les plus gros budgets")
-        ax.set_xlabel("Budget en millions de dollars")
-        plt.tight_layout()
-        st.pyplot(fig)
-
-    elif kpi_choice == "Films les mieux notes (IMDb)":
-        top10_note = (df[df["Nb_votes"] >= 1000].sort_values("Note", ascending=False)[["Titre", "Annee", "Budget", "Genre", "Note", "Nb_votes"]].head(10))
-        labels = top10_note["Titre"] + " (" + top10_note["Annee"].astype(str) + ")"
-        fig, ax = plt.subplots(figsize=(12, 7))
-        ax.barh(labels, top10_note["Note"], color="green")
-        ax.invert_yaxis()
-        ax.set_title("Top 10 films les mieux notés (tous genres confondus)")
-        ax.set_xlabel("Note TMDB (Nombre de votes > 1000)")
-        plt.tight_layout()
-        st.pyplot(fig)
-
-    elif kpi_choice == "Films les plus populaires (TMDB)":
-        top_pop = df.sort_values("Popularite", ascending=False).head(10)
-        labels = top_pop["Titre"] + " (" + top_pop["Annee"].astype(str) + ")"
-        fig, ax = plt.subplots(figsize=(12, 7))
-        ax.barh(labels, top_pop["Popularite"], color="cyan")
-        ax.invert_yaxis()
-        ax.set_title("Films les plus populaires - source TMDB")
-        ax.set_xlabel("Indice de popularité TMDB")
-        plt.tight_layout()
-        st.pyplot(fig)
-
-    elif kpi_choice == "Repartition des films par annee de sortie":
-        films_par_an = df.groupby("Annee").size().reset_index(name="Nb_films")
-        fig, ax = plt.subplots(figsize=(12, 7))
-        ax.barh(films_par_an["Annee"], films_par_an["Nb_films"], color="teal")
-        ax.set_title("Répartition des films par années de sortie")
-        ax.set_xlabel("Nb de films")
-        ax.set_ylabel("Années de sortie")
-        plt.tight_layout()
-        st.pyplot(fig)
