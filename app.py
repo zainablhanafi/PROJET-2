@@ -191,7 +191,7 @@ if selected == "FILMS":
 
 
 elif selected == "PREFERENCES":
-        st.title("Recommandations par préférences ˙✧🍿")
+        st.title("Recommandations par préférences ˙✧")
         
 
         realisateur = st.selectbox(
@@ -302,12 +302,12 @@ elif selected == "KPI":
         st.title("Indicateurs Clés de Performance")
     
         options = {
-        "canva1": "image/canva1.png",
-        "canva2": "image/canva2.png",
-        "canva3": "image/canva3.png",
-        "canva4": "image/canva4.png",
-        "canva5": "image/canva5.png",
+        "Top 10 films qui ont généré le plus de recette": "image/canva1.png",
+        "Top 10 films des plus gros budgets": "image/canva2.png",
+        "Films les mieux notés ": "image/canva3.png",
+        "Répartition des films par années de sortie": "image/canva4.png",
+        "Films les plus populaires": "image/canva5.png",
     }
     
-        choix = st.selectbox("Sélectionnez une image :", list(options.keys()))
+        choix = st.selectbox("Sélectionnez un KPI :", list(options.keys()))
         st.image(options[choix], use_column_width=True)
