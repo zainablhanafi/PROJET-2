@@ -224,7 +224,7 @@ if selected == "Films":
                     with col_resume :
                         st.markdown(f" {star} {row['Note']} /10  |  ⏱ {row['Duree']} min")
                         with st.expander("Voir le résumé"):
-                            st.write(translate_resume.translate(row['Resume']))                      # Traduction ddu résumé en Français
+                            st.write(translate_resume(row['Resume']))                      # Traduction ddu résumé en Français
 
 
 
@@ -279,7 +279,7 @@ elif selected == "Préférences":
                     with col_resume :
                         st.markdown(f" {star} {row['Note']} /10 | ⏱ {row['Duree']} min")
                         with st.expander("Voir le résumé"):                  
-                            st.write(translate_resume.translate(row['Resume']))                      # Traduction ddu résumé en Français
+                            st.write(translate_resume(row['Resume']))                      # Traduction ddu résumé en Français
 
 
 
