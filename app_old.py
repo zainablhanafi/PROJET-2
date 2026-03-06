@@ -19,90 +19,59 @@ from deep_translator import GoogleTranslator
 import matplotlib.pyplot as plt
 
 
-import base64
+df_final= pd.read_csv("df_final.csv")
+df = df_final.copy()                                            # Copie pour la partie streamlit (utilisateurs)
 
-@st.cache_data                                  # Fonction d'encodage pour éviter que le background soit relu à chaque interaction.
-def get_base64(path):
-    with open(path, "rb") as f:
-        return base64.b64encode(f.read()).decode()
-
-
-
-@st.cache_data
-def load_data():
-
-    df_final= pd.read_csv("df_final.csv")
-    df = df_final.copy()                                            # Copie pour la partie streamlit (utilisateurs)
-
-    df_final['Genre'] = df_final['Genre'].fillna('')
-    df_final['Acteurs'] = df_final['Acteurs'].fillna('')
-    df_final['Resume'] = df_final['Resume'].fillna('')
-
-    df_final['Acteurs'] = df_final['Acteurs'].str.replace(' ', '_', regex=False).str.replace(',', ' ')     # Suppression des espaces entre les prénoms et noms pour la Tokenisation
-    df_final['Acteurs']  = df_final['Acteurs'].str.lower()
-
-    df_final['Realisateur'] = df_final['Realisateur'].str.replace(' ', '_')                                # Suppression des espaces pour la Tokenisation comme pour les acteurs
-    df_final['Realisateur']  = df_final['Realisateur'].str.lower()
-
-    df_final['Genre']  = df_final['Genre'].str.lower()
-
-    df_final['Resume'] = df_final['Resume'].str.lower()
-    df_final['Resume'] = df_final['Resume'].str.replace('[^a-z ]','', regex=True)
-
-    col_num = df_final.select_dtypes(include=['number']).columns
-
-    return df, df_final
-
-df, df_final = load_data()
+df_final['Genre'] = df_final['Genre'].fillna('')
+df_final['Acteurs'] = df_final['Acteurs'].fillna('')
+df_final['Resume'] = df_final['Resume'].fillna('')
 
 
 # CREATION DES LISTES DU DF_FINAL (avant modifications)
 
+list_acteurs = []                                               # Création d'une liste d'acteur
+for list_noms in df_final['Acteurs'] :                          # Première boucle pour décomposer la liste d'acteurs        
+    list_decompo = list_noms.split(', ')
+    for nom_entier in list_decompo :                            # Deuxième boucle pour séparer le prénom(s) et Nom de chaque acteur
+        if nom_entier != 'Unknown' :                            # Condition pour enlever les inconnus
+            list_acteurs.append(nom_entier)
 
-
-@st.cache_data
-def actor_list(df):
-    list_acteurs = []                                               # Création d'une liste d'acteur
-    for list_noms in df['Acteurs'] :                          # Première boucle pour décomposer la liste d'acteurs        
-        list_decompo = list_noms.split(', ')
-        for nom_entier in list_decompo :                            # Deuxième boucle pour séparer le prénom(s) et Nom de chaque acteur
-            if nom_entier != 'Unknown' :                            # Condition pour enlever les inconnus
-                list_acteurs.append(nom_entier)
-
-    list_acteurs = list(set(list_acteurs))                          # Enlève les doublons et conserve le type (liste)
-    list_acteurs.sort()                                             # Liste par ordre alphabétique
-
-    return list_acteurs
+list_acteurs = list(set(list_acteurs))                          # Enlève les doublons et conserve le type (liste)
+list_acteurs.sort()                                             # Liste par ordre alphabétique
 
 list_genre = ['Action', 'Adventure', 'Documentary', 'Drama', 'Fantasy', 'Animation', 'Comedy', 'Family', 'History']
 
 
-
-
 # TRAITEMENT DES DATA DU DF_FINAL + CONSTRUCTION DU MODEL
 
-@st.cache_resource               # Charge en mémoire le modèle une seule fois pour éviter les ralentissement dans la page streamlit
-def load_model():
-
-    preprocess = ColumnTransformer(transformers=[
-            ('resume', TfidfVectorizer(stop_words = 'english',ngram_range=(1,2),min_df=2,max_df=0.8), 'Resume'),
-            ('genre', make_pipeline(TfidfVectorizer(), FunctionTransformer(lambda x: x * 3)), 'Genre'),
-            ('realisateur', make_pipeline(TfidfVectorizer(), FunctionTransformer(lambda x: x * 2)), 'Realisateur'),
-            ('acteurs', make_pipeline(TfidfVectorizer(), FunctionTransformer(lambda x: x * 2)), 'Acteurs'),
-    ])   
-
-    pipeline = Pipeline(steps=[
-        ('preprocess', preprocess),                                          # Étape 1 : encodage et normalisation de l'ensemble des colonnes
-        ('model', NearestNeighbors(n_neighbors=7, metric='cosine'))          # Étape 2 : On donne les données propres au modèle
-    ])
-
-    pipeline.fit(df_final)
-
-    return df_final, pipeline
-
-df_final, pipeline = load_model()
+df_final['Acteurs'] = df_final['Acteurs'].str.replace(' ', '_', regex=False).str.replace(',', ' ')     # Suppression des espaces entre les prénoms et noms pour la Tokenisation
+df_final['Acteurs']  = df_final['Acteurs'].str.lower()
 
 
+
+df_final['Realisateur'] = df_final['Realisateur'].str.replace(' ', '_')                                # Suppression des espaces pour la Tokenisation comme pour les acteurs
+df_final['Realisateur']  = df_final['Realisateur'].str.lower()
+
+df_final['Genre']  = df_final['Genre'].str.lower()
+
+df_final['Resume'] = df_final['Resume'].str.lower()
+df_final['Resume'] = df_final['Resume'].str.replace('[^a-z ]','', regex=True)
+
+col_num = df_final.select_dtypes(include=['number']).columns
+
+preprocess = ColumnTransformer(transformers=[
+        ('resume', TfidfVectorizer(stop_words = 'english',ngram_range=(1,2),min_df=2,max_df=0.8), 'Resume'),
+        ('genre', make_pipeline(TfidfVectorizer(), FunctionTransformer(lambda x: x * 3)), 'Genre'),
+        ('realisateur', make_pipeline(TfidfVectorizer(), FunctionTransformer(lambda x: x * 2)), 'Realisateur'),
+        ('acteurs', make_pipeline(TfidfVectorizer(), FunctionTransformer(lambda x: x * 2)), 'Acteurs'),
+])
+
+my_pipeline = Pipeline(steps=[
+    ('preprocess', preprocess),                                          # Étape 1 : encodage et normalisation de l'ensemble des colonnes
+    ('model', NearestNeighbors(n_neighbors=7, metric='cosine'))          # Étape 2 : On donne les données propres au modèle
+])
+
+my_pipeline.fit(df_final)
 
 def reco_preferences(acteur=None, genre=None, realisateur=None):
 
@@ -126,50 +95,41 @@ def reco_preferences(acteur=None, genre=None, realisateur=None):
         'Resume': [""]})
 
     # transformation en vecteur
-    vecteur = pipeline.named_steps['preprocess'].transform(film)
+    vecteur = my_pipeline.named_steps['preprocess'].transform(film)
 
     # recherche des voisins
-    distances, indices = pipeline.named_steps['model'].kneighbors(vecteur)
+    distances, indices = my_pipeline.named_steps['model'].kneighbors(vecteur)
 
     return df.iloc[indices[0]][["Titre", "Annee", "Genre","Acteurs","Realisateur","Affiche","Image", "Note", "Resume",  "Duree"]].sort_values(by='Note', ascending=False)
 
-
-
 def reco_titre(titre: str):
 
-    index = df_final[df_final['Titre'].str.lower() == titre.lower()].index[0]               # Trouve l’index du film
+    index = df_final[df_final['Titre'].str.lower() == titre.lower()].index[0]                        # Trouve l’index du film
 
-    vecteur = pipeline.named_steps['preprocess'].transform(df_final.iloc[[index]])       # Transform l'index en vecteur pour le modèle
+    vecteur = my_pipeline.named_steps['preprocess'].transform(df_final.iloc[[index]])                   # Transform l'index en vecteur pour le modèle
     
-    distances, indices = pipeline.named_steps['model'].kneighbors(vecteur)               # Récupère les distances et indices des plus proches voisins
+    distances, indices = my_pipeline.named_steps['model'].kneighbors(vecteur)                           # Récupère les distances et indices des plus proches voisins
 
     return df.iloc[indices[0]][["Titre", "Annee", "Genre", "Realisateur", "Acteurs","Affiche","Image", "Note", "Resume", "Duree"]].sort_values(by='Note', ascending=False)      # Retourne les film les plus proches 
 
 
-@st.cache_data                 # Charge Translator en mémoire pour éviter le ralentissement avec Streamlit
-def translate_resume(text):
-    translator = GoogleTranslator(source='en', target='fr')
-    return translator.translate(text)
 
 
-
-
-def set_background(image_path):                    # Fonction pour aller chercher le background et le mettre en mémoire    
-
-    data = get_base64(image_path)
-
-    st.markdown(
-        f"""
+def set_background(image_path):                                             
+    with open(image_path, "rb") as f:
+        data = base64.b64encode(f.read()).decode()
+    st.markdown(f"""
         <style>
-        .stApp {{
-            background-image: url("data:image/jpg;base64,{data}");
-            background-size: cover;
-            background-attachment: fixed;
-        }}
+            .stApp {{
+                background-image: url("data:image/gif;base64,{data}");
+                background-size: cover;
+                background-attachment: fixed;
+            }}
+            h1, h2, h3 {{ color: white !important; }}
+            p, div, span {{ color: #e0e0e0 !important; }}
         </style>
-        """,
-        unsafe_allow_html=True
-    )
+    """, unsafe_allow_html=True)
+
 
 set_background("image/download (2).jpg")
 
@@ -224,7 +184,8 @@ if selected == "Films":
                     with col_resume :
                         st.markdown(f" {star} {row['Note']} /10  |  ⏱ {row['Duree']} min")
                         with st.expander("Voir le résumé"):
-                            st.write(translate_resume.translate(row['Resume']))                      # Traduction ddu résumé en Français
+                            translator = GoogleTranslator(source='en', target='fr')                     
+                            st.write(translator.translate(row['Resume']))                      # Traduction ddu résumé en Français
 
 
 
@@ -242,7 +203,7 @@ elif selected == "Préférences":
         
         acteur = st.selectbox(
         "Choisissez un acteur :",
-        [""] + actor_list(df))
+        [""] + sorted(list_acteurs))
 
 
         if realisateur != ""  or genre != "" or acteur != "" :
@@ -278,8 +239,9 @@ elif selected == "Préférences":
 
                     with col_resume :
                         st.markdown(f" {star} {row['Note']} /10 | ⏱ {row['Duree']} min")
-                        with st.expander("Voir le résumé"):                  
-                            st.write(translate_resume.translate(row['Resume']))                      # Traduction ddu résumé en Français
+                        with st.expander("Voir le résumé"):
+                            translator = GoogleTranslator(source='en', target='fr')                     
+                            st.write(translator.translate(row['Resume']))                      # Traduction ddu résumé en Français
 
 
 
